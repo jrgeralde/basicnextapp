@@ -1,0 +1,16 @@
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=reactdb
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/reactdb
+
+# Better Auth
+BETTER_AUTH_SECRET=NzhkM2Y5ZTJmYjYwM2M0YmU4YjA1ODcyM2M1YjY5NDA3ZDAyM2M1ZTg5M2Y0YjU2YmU4YjA1ODcyM2M1YjY5NDA3ZDAyM2M1ZTg5M2Y0YjU2
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Session
+SESSION_TIMEOUT_VALUE=2 hours
