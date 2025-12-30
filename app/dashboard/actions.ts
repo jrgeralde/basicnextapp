@@ -1,7 +1,7 @@
 "use server";
 
 import { query } from "@/lib/db";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -15,13 +15,19 @@ export interface UserProfile {
   active: boolean;
 }
 
-export async function getMyProfile(): Promise<UserProfile | null> {
+export async function getMyProfile(expectedUserId?: string): Promise<UserProfile | null> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session?.user) {
     return null;
+  }
+
+  // Security Check: Ensure the session matches the client's expectation
+  // This prevents the "Admin Tab A" from loading "User Tab B" data if the session cookie changed
+  if (expectedUserId && session.user.id !== expectedUserId) {
+    throw new Error("SessionMismatch");
   }
 
   const { rows } = await query<UserProfile>(
@@ -49,7 +55,7 @@ export async function updateMyProfile(data: {
   }
 
   if (session.user.id !== data.id) {
-    throw new Error("Forbidden");
+    throw new Error("SessionMismatch");
   }
 
   await query(
@@ -84,8 +90,11 @@ export async function changeMyPassword(userId: string, newPassword: string): Pro
   }
 
   if (session.user.id !== userId) {
-    throw new Error("Forbidden");
+    throw new Error("SessionMismatch");
   }
+
+  const cookieStore = await cookies();
+  const originalToken = cookieStore.get("better-auth.session_token")?.value;
 
   // Generate hash using dummy user trick
   const dummyEmail = `temp-${Date.now()}@temp.com`;
@@ -96,6 +105,13 @@ export async function changeMyPassword(userId: string, newPassword: string): Pro
           name: "Temp"
       }
   });
+
+  // Restore the original session to prevent the dummy user from logging in
+  if (originalToken) {
+    cookieStore.set("better-auth.session_token", originalToken);
+  } else {
+    cookieStore.delete("better-auth.session_token");
+  }
 
   if (!dummyUser) {
       throw new Error("Failed to generate password hash");

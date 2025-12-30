@@ -2,6 +2,7 @@
 
 import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export interface User {
   id: string;
@@ -11,6 +12,57 @@ export interface User {
   birthdate: Date | null;
   gender: string | null;
   active: boolean;
+}
+
+export interface Role {
+  id: string; // Role Name
+  description: string | null;
+}
+
+export interface UserRole {
+  id: string;
+  userId: string;
+  roleId: string;
+}
+
+export async function getAllRoles(): Promise<Role[]> {
+  const { rows } = await query<Role>(
+    'SELECT id, description FROM public.roles ORDER BY id ASC'
+  );
+  return rows;
+}
+
+export async function getUserRoles(userId: string): Promise<string[]> {
+  const { rows } = await query<{roleId: string}>(
+    'SELECT "roleId" FROM public.usersroles WHERE "userId" = $1',
+    [userId]
+  );
+  return rows.map(r => r.roleId);
+}
+
+export async function assignRole(userId: string, roleId: string): Promise<void> {
+  // Check if already assigned
+  const existing = await query(
+    'SELECT id FROM public.usersroles WHERE "userId" = $1 AND "roleId" = $2',
+    [userId, roleId]
+  );
+  
+  if (existing.rows.length > 0) return;
+
+  const id = crypto.randomUUID();
+  await query(
+    'INSERT INTO public.usersroles (id, "userId", "roleId") VALUES ($1, $2, $3)',
+    [id, userId, roleId]
+  );
+  revalidatePath("/dashboard/admin/users");
+}
+
+export async function removeRole(userId: string, roleId: string): Promise<void> {
+  await query(
+    'DELETE FROM public.usersroles WHERE "userId" = $1 AND "roleId" = $2',
+    [userId, roleId]
+  );
+  revalidatePath("/dashboard/admin/users");
 }
 
 export async function getUsers(): Promise<User[]> {
@@ -219,6 +271,9 @@ export async function changeUserPassword(userId: string, newPassword: string): P
     // 
     // This is inefficient but guaranteed to work with the current config.
     
+    const cookieStore = await cookies();
+    const originalToken = cookieStore.get("better-auth.session_token")?.value;
+
     const dummyEmail = `temp-${Date.now()}@temp.com`;
     const dummyUser = await auth.api.signUpEmail({
         body: {
@@ -227,6 +282,13 @@ export async function changeUserPassword(userId: string, newPassword: string): P
             name: "Temp"
         }
     });
+
+    // Restore the original session to prevent the dummy user from logging in
+    if (originalToken) {
+        cookieStore.set("better-auth.session_token", originalToken);
+    } else {
+        cookieStore.delete("better-auth.session_token");
+    }
 
     if (!dummyUser) {
         throw new Error("Failed to generate password hash");

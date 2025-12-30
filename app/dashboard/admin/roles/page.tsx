@@ -108,12 +108,14 @@ export default function Page() {
           </button>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
-        >
-          + Add Role
-        </button>
+        <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANADDROLES"]}>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
+          >
+            + Add Role
+          </button>
+        </ModalGuardWrapper>
       </div>
 
       <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANADDROLES"]}>
@@ -170,19 +172,23 @@ export default function Page() {
                   <td className="px-4 py-2 text-sm">{role.id}</td>
                   <td className="px-4 py-2 text-sm">{role.description}</td>
                   <td className="px-6 py-2 text-sm space-x-4">
-                    <button
-                      onClick={() => setRoleToEdit(role)}
-                      className="rounded bg-amber-500 px-3 py-1 text-white hover:bg-amber-600 disabled:opacity-50"
-                    >
-                      Edit
-                    </button>
+                    <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANEDITROLES"]}>
+                      <button
+                        onClick={() => setRoleToEdit(role)}
+                        className="rounded bg-amber-500 px-3 py-1 text-white hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
+                    </ModalGuardWrapper>
 
-                    <button
-                      onClick={() => setRoleToDelete(role)}
-                      className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+                    <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANDELETEROLES"]}>
+                      <button
+                        onClick={() => setRoleToDelete(role)}
+                        className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </ModalGuardWrapper>
                   </td>
                 </tr>
               ))}

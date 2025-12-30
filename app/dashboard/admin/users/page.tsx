@@ -8,6 +8,7 @@ import { getUsers, addUser, updateUser, toggleUserActive, changeUserPassword, Us
 import AddUserModal from "./AddUserModal";
 import EditUserModal from "./EditUserModal";
 import ChangeUserPasswordModal from "./ChangeUserPasswordModal";
+import AssignUserRolesModal from "./AssignUserRolesModal";
 import ActDeactUserModal from "./ActDeactUserModal";
 import PageGuardWrapper from "@/components/PageGuardWrapper";
 import ModalGuardWrapper from "@/components/ModalGuardWrapper";
@@ -24,6 +25,7 @@ export default function Page() {
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
     const [userToToggle, setUserToToggle] = useState<User | null>(null);
     const [userToChangePassword, setUserToChangePassword] = useState<User | null>(null);
+    const [userToAssignRoles, setUserToAssignRoles] = useState<User | null>(null);
 
     const fetchUsers = useCallback(() => {
         getUsers()
@@ -179,6 +181,12 @@ export default function Page() {
         user={userToChangePassword}
       />
 
+      <AssignUserRolesModal
+        isOpen={!!userToAssignRoles}
+        onClose={() => setUserToAssignRoles(null)}
+        user={userToAssignRoles}
+      />
+
       {/* Table */}
       <>
         <div className="max-h-[calc(100vh-260px)] overflow-auto rounded border bg-white shadow relative">
@@ -243,7 +251,7 @@ export default function Page() {
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-500">{user.gender || "-"}</td>
                   <td className="px-4 py-2 text-sm">
-                    <ModalGuardWrapper requiredRoles={['ADMINISTRATOR', 'USERS_ACTIVATEUSERS']}>
+                    <ModalGuardWrapper requiredRoles={['ADMINISTRATOR', 'USERS_CANACTIVATEUSERS']}>
                         <button 
                             onClick={() => setUserToToggle(user)}
                             className={`px-3 py-1 rounded-md border font-semibold transition-colors ${
@@ -273,6 +281,16 @@ export default function Page() {
                             title="Change Password"
                         >
                             Password
+                        </button>
+                    </ModalGuardWrapper>
+
+                    <ModalGuardWrapper requiredRoles={['ADMINISTRATOR','USERS_CANASSIGNUSERSROLES']}>
+                        <button 
+                            onClick={() => setUserToAssignRoles(user)}
+                            className="px-3 py-1 rounded-md border border-teal-600 text-teal-600 hover:bg-teal-50 font-semibold transition-colors"
+                            title="Assign Roles"
+                        >
+                            Roles
                         </button>
                     </ModalGuardWrapper>
                   </td>

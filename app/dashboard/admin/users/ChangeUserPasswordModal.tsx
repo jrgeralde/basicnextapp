@@ -125,6 +125,13 @@ export default function ChangeUserPasswordModal({ isOpen, onClose, onChangePassw
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="p-3 bg-blue-50 rounded-md border border-blue-100 text-sm text-gray-700">
+             <div className="flex flex-col gap-1">
+                <p><span className="font-semibold text-gray-900">User:</span> {user.name}</p>
+                <p><span className="font-semibold text-gray-900">Email:</span> {user.email}</p>
+             </div>
+          </div>
+
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-100">
               {error}

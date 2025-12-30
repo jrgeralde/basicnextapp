@@ -49,12 +49,11 @@ function ConfirmModalComponent({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[9999]">
-      {/* Transparent glassy overlay */}
-      {/* <div className="absolute inset-0 bg-white/20" onClick={handleCancel}></div> */}
-      <div className="absolute inset-0 bg-white/20"></div>
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/50"></div>
       {/* Modal content */}
-      <div className="relative bg-white/30 p-6 rounded-xl shadow-lg w-96 text-center">
-        <p className="mb-4">{message}</p>
+      <div className="relative bg-white p-6 rounded-xl shadow-lg w-96 text-center border border-gray-200">
+        <p className="mb-4 text-gray-800 font-medium">{message}</p>
         <div className="flex justify-center gap-4">
           <button
             className={`px-4 py-2 rounded text-white ${cancelColor}`}

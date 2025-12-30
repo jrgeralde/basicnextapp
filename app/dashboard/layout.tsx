@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { House, UserCog, ChevronDown, ShieldCheck, LucideIcon, LogOut } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import ConfirmModal from "@/components/ConfirmModal";
 import { showMessage } from "@/components/MessageModal";
 import SessionTimeoutWrapper from "@/components/SessionTimeoutWrapper";
+import SessionSync from "@/components/SessionSync";
 import EditUserModal from "./admin/users/EditUserModal";
 import ChangeUserPasswordModal from "./admin/users/ChangeUserPasswordModal";
 import { getMyProfile, updateMyProfile, changeMyPassword, UserProfile } from "./actions";
@@ -58,43 +59,72 @@ function NavDropdown({ label, Icon, items, isOpen, onToggle }: {
 // --- Main Layout ---
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
+  // Store the initial user ID to detect session changes
+  const initialUserId = useRef<string | null>(null);
+  const initializationRef = useRef(false);
+
+  useEffect(() => {
+    if (!isPending && session?.user && !initializationRef.current) {
+        initialUserId.current = session.user.id;
+        initializationRef.current = true;
+    }
+  }, [session, isPending]);
 
   const toggleMenu = (name: string) => setOpenMenu(openMenu === name ? null : name);
   
   const openEditProfile = async () => {
     setOpenMenu(null);
     try {
-      const profile = await getMyProfile();
+      // Use the INITIAL user ID, not the potentially updated session ID
+      const targetUserId = initialUserId.current;
+      
+      // Pass current session ID to verify we are still the same user
+      const profile = await getMyProfile(targetUserId || undefined);
       if (profile) {
         setCurrentUserProfile(profile);
         setIsEditProfileOpen(true);
       } else {
-        alert("Failed to fetch profile");
+        await showMessage("Failed to fetch profile");
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error("Error fetching profile:", error);
-      alert("Error fetching profile");
+      await showMessage("Error fetching profile");
     }
   };
 
   const openChangePassword = async () => {
     setOpenMenu(null);
     try {
-      const profile = await getMyProfile();
+      // Use the INITIAL user ID
+      const targetUserId = initialUserId.current;
+
+      // Pass current session ID to verify we are still the same user
+      const profile = await getMyProfile(targetUserId || undefined);
       if (profile) {
         setCurrentUserProfile(profile);
         setIsChangePasswordOpen(true);
       } else {
-        alert("Failed to fetch profile");
+        await showMessage("Failed to fetch profile");
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error("Error fetching profile:", error);
-      alert("Error fetching profile");
+      await showMessage("Error fetching profile");
     }
   };
 
@@ -111,7 +141,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setIsEditProfileOpen(false);
       router.refresh();
       await showMessage("Profile updated successfully.");
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error("Error updating profile:", error);
       await showMessage("Failed to update profile");
     }
@@ -124,13 +159,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         // Optional: Sign out the user or show success message?
         // For now, just close modal.
         await showMessage("Password changed successfully.");
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+            await showMessage("Session changed in another tab. Reloading...");
+            window.location.reload();
+            return;
+        }
         console.error("Error changing password:", error);
         await showMessage("Failed to change password");
     }
   };
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     setOpenMenu(null);
     if (action === "Role Management") {
       router.push("/dashboard/admin/roles");
@@ -140,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push("/dashboard/admin/users");
       return;
     }
-    alert(`Clicked: ${action}`);
+    await showMessage(`Clicked: ${action}`);
   };
 
   const handleLogout = async () => {
@@ -179,6 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       countdownSeconds={60}
       onLogout={handleTimeoutLogout}
     >
+      <SessionSync />
       <div className="min-h-screen flex flex-col bg-gray-50">
         <header className="bg-blue-600 shadow px-6 py-2 flex items-center justify-between text-white">
           <button
