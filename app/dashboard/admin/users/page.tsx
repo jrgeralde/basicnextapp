@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { showMessage } from '@/components/MessageModal';
-import { getUsers, addUser, updateUser, toggleUserActive, User } from "./actions";
+import { getUsers, addUser, updateUser, toggleUserActive, changeUserPassword, User } from "./actions";
 import AddUserModal from "./AddUserModal";
 import EditUserModal from "./EditUserModal";
+import ChangeUserPasswordModal from "./ChangeUserPasswordModal";
 import ActDeactUserModal from "./ActDeactUserModal";
 import PageGuardWrapper from "@/components/PageGuardWrapper";
 import ModalGuardWrapper from "@/components/ModalGuardWrapper";
@@ -22,6 +23,7 @@ export default function Page() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
     const [userToToggle, setUserToToggle] = useState<User | null>(null);
+    const [userToChangePassword, setUserToChangePassword] = useState<User | null>(null);
 
     const fetchUsers = useCallback(() => {
         getUsers()
@@ -85,6 +87,16 @@ export default function Page() {
         } catch (error) {
             console.error(error);
             await showMessage("Failed to update user status.");
+        }
+    };
+
+    const handleChangePassword = async (id: string, password: string) => {
+        try {
+            await changeUserPassword(id, password);
+            await showMessage("Password changed successfully!");
+        } catch (error) {
+            console.error(error);
+            await showMessage("Failed to change password.");
         }
     };
 
@@ -160,6 +172,13 @@ export default function Page() {
         />
       </ModalGuardWrapper>
 
+      <ChangeUserPasswordModal
+        isOpen={!!userToChangePassword}
+        onClose={() => setUserToChangePassword(null)}
+        onChangePassword={handleChangePassword}
+        user={userToChangePassword}
+      />
+
       {/* Table */}
       <>
         <div className="max-h-[calc(100vh-260px)] overflow-auto rounded border bg-white shadow relative">
@@ -188,6 +207,9 @@ export default function Page() {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                   Gender
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                  Status Action
                 </th>
                 <th className="sticky right-0 z-20 bg-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                   Actions
@@ -220,30 +242,45 @@ export default function Page() {
                     {user.birthdate ? new Date(user.birthdate).toLocaleDateString() : "-"}
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-500">{user.gender || "-"}</td>
-                  <td className="sticky right-0 z-10 bg-white px-6 py-2 text-sm space-x-4 whitespace-nowrap shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                    <button
-                      onClick={() => setUserToEdit(user)}
-                      className="rounded bg-amber-500 px-3 py-1 text-white hover:bg-amber-600 disabled:opacity-50"
-                    >
-                      Edit
-                    </button>
+                  <td className="px-4 py-2 text-sm">
+                    <ModalGuardWrapper requiredRoles={['ADMINISTRATOR', 'USERS_ACTIVATEUSERS']}>
+                        <button 
+                            onClick={() => setUserToToggle(user)}
+                            className={`px-3 py-1 rounded-md border font-semibold transition-colors ${
+                                user.active 
+                                    ? 'border-red-600 text-red-600 hover:bg-red-50' 
+                                    : 'border-green-600 text-green-600 hover:bg-green-50'
+                            }`}
+                        >
+                            {user.active ? "Deactivate" : "Activate"}
+                        </button>
+                    </ModalGuardWrapper>
+                  </td>
+                  <td className="sticky right-0 z-10 bg-white px-6 py-2 text-sm space-x-2 whitespace-nowrap shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                     <ModalGuardWrapper requiredRoles={['ADMINISTRATOR', 'USERS_CANEDITUSERS']}>
+                        <button 
+                            onClick={() => setUserToEdit(user)}
+                            className="px-3 py-1 rounded-md border border-amber-500 text-amber-600 hover:bg-amber-50 font-semibold transition-colors"
+                        >
+                            Edit
+                        </button>
+                    </ModalGuardWrapper>
 
-                    <button
-                      onClick={() => setUserToToggle(user)}
-                      className={`rounded px-3 py-1 font-semibold ${
-                        user.active 
-                            ? "text-white bg-green-600 hover:bg-green-700 border border-green-700" 
-                            : "text-white bg-red-600 hover:bg-red-700 border border-red-700"
-                      }`}
-                    >
-                      {user.active ? "Deactivate" : "Activate"}
-                    </button>
+                    <ModalGuardWrapper requiredRoles={['ADMINISTRATOR', 'USERS_CANEDITUSERS']}>
+                        <button 
+                            onClick={() => setUserToChangePassword(user)}
+                            className="px-3 py-1 rounded-md border border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold transition-colors"
+                            title="Change Password"
+                        >
+                            Password
+                        </button>
+                    </ModalGuardWrapper>
                   </td>
                 </tr>
               ))}
               {!loadingUsers && filteredUsers.length === 0 && (
                   <tr>
-                      <td colSpan={8} className="px-4 py-4 text-center text-gray-500">No users found.</td>
+                      <td colSpan={9} className="px-4 py-4 text-center text-gray-500">No users found.</td>
                   </tr>
               )}
             </tbody>

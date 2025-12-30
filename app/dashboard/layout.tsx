@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { House, UserCog, ChevronDown, ShieldCheck, LucideIcon, LogOut } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import ConfirmModal from "@/components/ConfirmModal";
+import { showMessage } from "@/components/MessageModal";
 import SessionTimeoutWrapper from "@/components/SessionTimeoutWrapper";
+import EditUserModal from "./admin/users/EditUserModal";
+import ChangeUserPasswordModal from "./admin/users/ChangeUserPasswordModal";
+import { getMyProfile, updateMyProfile, changeMyPassword, UserProfile } from "./actions";
 
 // --- Reusable Dropdown Component ---
 interface NavItem {
@@ -56,9 +60,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { data: session } = useSession();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const toggleMenu = (name: string) => setOpenMenu(openMenu === name ? null : name);
   
+  const openEditProfile = async () => {
+    setOpenMenu(null);
+    try {
+      const profile = await getMyProfile();
+      if (profile) {
+        setCurrentUserProfile(profile);
+        setIsEditProfileOpen(true);
+      } else {
+        alert("Failed to fetch profile");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      alert("Error fetching profile");
+    }
+  };
+
+  const openChangePassword = async () => {
+    setOpenMenu(null);
+    try {
+      const profile = await getMyProfile();
+      if (profile) {
+        setCurrentUserProfile(profile);
+        setIsChangePasswordOpen(true);
+      } else {
+        alert("Failed to fetch profile");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      alert("Error fetching profile");
+    }
+  };
+
+  const handleEditProfileSubmit = async (data: {
+    id: string;
+    email: string;
+    name: string;
+    fullname: string;
+    birthdate: string;
+    gender: string;
+  }) => {
+    try {
+      await updateMyProfile(data);
+      setIsEditProfileOpen(false);
+      router.refresh();
+      await showMessage("Profile updated successfully.");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      await showMessage("Failed to update profile");
+    }
+  };
+
+  const handleChangePasswordSubmit = async (userId: string, newPassword: string) => {
+    try {
+        await changeMyPassword(userId, newPassword);
+        setIsChangePasswordOpen(false);
+        // Optional: Sign out the user or show success message?
+        // For now, just close modal.
+        await showMessage("Password changed successfully.");
+    } catch (error) {
+        console.error("Error changing password:", error);
+        await showMessage("Failed to change password");
+    }
+  };
+
   const handleAction = (action: string) => {
     setOpenMenu(null);
     if (action === "Role Management") {
@@ -87,8 +158,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const profileItems: NavItem[] = [
-    { label: "Edit My Profile", onClick: () => handleAction("Edit My Profile") },
-    { label: "Change Password", onClick: () => handleAction("Change Password") },
+    { label: "Edit My Profile", onClick: openEditProfile },
+    { label: "Change Password", onClick: openChangePassword },
   ];
 
   const adminItems = [
@@ -150,6 +221,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </span>
           <span>© {new Date().getFullYear()} My Dashboard App</span>
         </footer>
+
+        {/* Edit Profile Modal */}
+        <EditUserModal 
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+          onEdit={handleEditProfileSubmit}
+          user={currentUserProfile}
+          title="Edit My Profile"
+        />
+
+        {/* Change Password Modal */}
+        <ChangeUserPasswordModal 
+          isOpen={isChangePasswordOpen}
+          onClose={() => setIsChangePasswordOpen(false)}
+          onChangePassword={handleChangePasswordSubmit}
+          user={currentUserProfile}
+          title="Change My Password"
+        />
       </div>
     </SessionTimeoutWrapper>
   );

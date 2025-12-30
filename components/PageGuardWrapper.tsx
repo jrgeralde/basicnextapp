@@ -43,7 +43,7 @@ export default function PageGuardWrapper({ children, requiredRoles = [] }: PageG
         if (hasAnyRole) {
           setIsAuthorized(true);
         } else {
-          await showMessage("You do not have permission to access this page:"+session.user.id);
+          await showMessage("You do not have permission to access this page.");
           router.push("/dashboard");
         }
       } catch (error) {

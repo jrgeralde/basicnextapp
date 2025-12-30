@@ -16,9 +16,10 @@ interface EditUserModalProps {
     gender: string;
   }) => Promise<void>;
   user: User | null;
+  title?: string;
 }
 
-export default function EditUserModal({ isOpen, onClose, onEdit, user }: EditUserModalProps) {
+export default function EditUserModal({ isOpen, onClose, onEdit, user, title = "Edit User" }: EditUserModalProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [fullname, setFullname] = useState("");
@@ -120,7 +121,7 @@ export default function EditUserModal({ isOpen, onClose, onEdit, user }: EditUse
         >
           <div className="flex items-center gap-2">
             <GripHorizontal className="h-5 w-5 opacity-70" />
-            <h2 className="text-lg font-semibold">Edit User</h2>
+            <h2 className="text-lg font-semibold">{title}</h2>
           </div>
           <button
             onClick={onClose}
