@@ -94,7 +94,12 @@ export default function AssignUserRolesModal({ isOpen, onClose, user }: AssignUs
     try {
       await assignRole(user.id, roleId);
       setAssignedRoleIds(prev => [...prev, roleId]);
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error(error);
       showMessage("Failed to assign role.");
     }
@@ -105,7 +110,12 @@ export default function AssignUserRolesModal({ isOpen, onClose, user }: AssignUs
     try {
       await removeRole(user.id, roleId);
       setAssignedRoleIds(prev => prev.filter(id => id !== roleId));
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error(error);
       showMessage("Failed to remove role.");
     }
@@ -122,7 +132,12 @@ export default function AssignUserRolesModal({ isOpen, onClose, user }: AssignUs
       await Promise.all(availableRoles.map(role => assignRole(user.id, role.id)));
       setAssignedRoleIds(prev => [...prev, ...availableRoles.map(r => r.id)]);
       showMessage(`Successfully assigned ${availableRoles.length} roles.`);
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+        await showMessage("Session changed in another tab. Reloading...");
+        window.location.reload();
+        return;
+      }
       console.error(error);
       showMessage("Failed to assign some roles.");
     } finally {
@@ -142,7 +157,12 @@ export default function AssignUserRolesModal({ isOpen, onClose, user }: AssignUs
         const removedIds = assignedRoles.map(r => r.id);
         setAssignedRoleIds(prev => prev.filter(id => !removedIds.includes(id)));
         showMessage(`Successfully removed ${assignedRoles.length} roles.`);
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+            await showMessage("Session changed in another tab. Reloading...");
+            window.location.reload();
+            return;
+        }
         console.error(error);
         showMessage("Failed to remove some roles.");
     } finally {

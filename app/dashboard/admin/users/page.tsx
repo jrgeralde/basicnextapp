@@ -57,7 +57,12 @@ export default function Page() {
             await addUser(data);
             await showMessage("User added successfully!");
             fetchUsers();
-        } catch (error) {
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+                await showMessage("Session changed in another tab. Reloading...");
+                window.location.reload();
+                return;
+            }
             console.error(error);
             await showMessage("Failed to add user.");
         }
@@ -75,7 +80,12 @@ export default function Page() {
             await updateUser(data);
             await showMessage("User updated successfully!");
             fetchUsers();
-        } catch (error) {
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+                await showMessage("Session changed in another tab. Reloading...");
+                window.location.reload();
+                return;
+            }
             console.error(error);
             await showMessage("Failed to update user.");
         }
@@ -86,7 +96,12 @@ export default function Page() {
             await toggleUserActive(id, active);
           //  await showMessage(`User ${active ? "activated" : "deactivated"} successfully!`);
             fetchUsers();
-        } catch (error) {
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+                await showMessage("Session changed in another tab. Reloading...");
+                window.location.reload();
+                return;
+            }
             console.error(error);
             await showMessage("Failed to update user status.");
         }
@@ -96,7 +111,12 @@ export default function Page() {
         try {
             await changeUserPassword(id, password);
             await showMessage("Password changed successfully!");
-        } catch (error) {
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.message === "SessionMismatch" || error.message.includes("SessionMismatch"))) {
+                await showMessage("Session changed in another tab. Reloading...");
+                window.location.reload();
+                return;
+            }
             console.error(error);
             await showMessage("Failed to change password.");
         }
