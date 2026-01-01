@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { showMessage } from '@/components/MessageModal';
 import { getRoles, addRole, deleteRole, updateRole, Role } from "./actions";
+import { downloadRolesExcel } from "./DownloadRoles";
+import DownloadRolesPdf from "./DownloadRolesPdf";
 import AddRoleModal from "./AddRoleModal";
 import DeleteRoleModal from "./DeleteRoleModal";
 import EditRoleModal from "./EditRoleModal";
@@ -73,6 +75,10 @@ export default function Page() {
         }
     };
 
+    const handleDownloadExcel = () => {
+        downloadRolesExcel(roles);
+    };
+
     if (isPending || !session) {
         return <div className="p-6">Loading...</div>; 
     }
@@ -106,6 +112,20 @@ export default function Page() {
           >
             Clear
           </button>
+        </div>
+
+        <div className="flex gap-2">
+            <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "USERS_CANDOWNLOADROLES"]}>
+                <button
+                    onClick={handleDownloadExcel}
+                    className="rounded-md bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
+                >
+                    Download Excel
+                </button>
+            </ModalGuardWrapper>
+            <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "USERS_CANPRINTROLES"]}>
+                <DownloadRolesPdf roles={filteredRoles} searchQuery={searchQuery} />
+            </ModalGuardWrapper>
         </div>
 
         <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANADDROLES"]}>
@@ -145,8 +165,7 @@ export default function Page() {
       </ModalGuardWrapper>
 
       {/* Table */}
-      <>
-        <div className="max-h-[calc(100vh-260px)] overflow-auto rounded border bg-white shadow">
+      <div className="max-h-[calc(100vh-260px)] overflow-auto rounded border bg-white shadow">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-200">
               <tr>
@@ -159,7 +178,7 @@ export default function Page() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                   Description
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 print:hidden">
                   Actions
                 </th>
               </tr>
@@ -171,7 +190,7 @@ export default function Page() {
                   <td className="px-4 py-2 text-sm">{index + 1}</td>
                   <td className="px-4 py-2 text-sm">{role.id}</td>
                   <td className="px-4 py-2 text-sm">{role.description}</td>
-                  <td className="px-6 py-2 text-sm space-x-4">
+                  <td className="px-6 py-2 text-sm space-x-4 print:hidden">
                     <ModalGuardWrapper requiredRoles={["ADMINISTRATOR", "ROLES_CANEDITROLES"]}>
                       <button
                         onClick={() => setRoleToEdit(role)}
@@ -204,7 +223,6 @@ export default function Page() {
         <div className="mt-2 text-sm text-gray-700">
           Showing {filteredRoles.length} of {roles.length} roles
         </div>
-      </>
     </div>
     </PageGuardWrapper>
   );

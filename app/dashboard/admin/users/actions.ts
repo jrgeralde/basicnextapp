@@ -111,7 +111,7 @@ export async function removeRole(userId: string, roleId: string): Promise<void> 
 }
 
 export async function getUsers(): Promise<User[]> {
-  await checkPermission(['ADMINISTRATOR']);
+  await checkPermission(['ADMINISTRATOR', 'USERS_CANACCESSUSERS']);
   const { rows } = await query<User>(
     'SELECT id, email, name, fullname, birthdate, gender, active FROM public.users ORDER BY "createdAt" DESC'
   );
@@ -125,7 +125,7 @@ export async function addUser(data: {
   birthdate: string;
   gender: string;
 }): Promise<void> {
-  await checkPermission(['ADMINISTRATOR', 'USERS_CANEDITUSERS']);
+  await checkPermission(['ADMINISTRATOR', 'USERS_CANADDUSERS']);
 
   const id = crypto.randomUUID();
   
